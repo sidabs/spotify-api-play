@@ -5,9 +5,12 @@ var spotify     = {
         clientId:       process.env.CLIENT_ID       || '',
         clientSecret:   process.env.CLIENT_SECRET   || '',
         user:   {
-            id:             process.env.USER_ID         || '',
+            id:             process.env.USER_ID     || '',
             accessToken:    null,
             refreshToken:   null
+        },
+        playlist:   {
+            id:         process.env.PLAYLIST_ID     || ''
         },
         api:    {
             host:       'api.spotify.com',
@@ -67,10 +70,10 @@ var spotify     = {
             }
         });
     },
-    getAllPlaylists:        function(callback) {
+    getAllPlaylists:        function(userId, callback) {
         //Spotify Request Variabels
         var host        = spotify.config.api.host;
-        var path        = '/v1/users/' + spotify.config.user.id + '/playlists?limit=' + spotify.config.api.limit;
+        var path        = '/v1/users/' + userId + '/playlists';
         //http headers set (including Authorization key/value)
         var headers     = {
             "Authorization":    "Bearer " + spotify.config.user.accessToken
@@ -84,7 +87,25 @@ var spotify     = {
                 callback(err);
             }
         });
-    }
+    },
+    getPlaylist:        function(userId, playlistId, callback) {
+        //Spotify Request Variabels
+        var host        = spotify.config.api.host;
+        var path        = '/v1/users/' + userId + '/playlists/' + playlistId;
+        //http headers set (including Authorization key/value)
+        var headers     = {
+            "Authorization":    "Bearer " + spotify.config.user.accessToken
+        };
+        //Execute Post to get tokens
+        request.executeGet(host, path, headers, function(responseStr) {
+            try {
+                var responseJSON    = JSON.parse(responseStr);
+                callback(responseJSON);
+            } catch(err) {
+                callback(err);
+            }
+        });
+    },
 };
 
 module.exports  = spotify;

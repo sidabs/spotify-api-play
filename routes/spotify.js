@@ -47,7 +47,13 @@ router.get('/accesstoken', function(req, res) {
 });
 
 router.get('/playlists', function(req, res) {
-    spotify.getAllPlaylists(function(result) {
+    spotify.getAllPlaylists(spotify.config.user.id, function(result) {
+        res.json(result);
+    });
+});
+
+router.get('/playlist', function(req, res) {
+    spotify.getPlaylist(spotify.config.user.id, spotify.config.playlist.id, function(result) {
         res.json(result);
     });
 });
