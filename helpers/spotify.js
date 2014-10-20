@@ -1,9 +1,14 @@
-var webRequest  = require('./request');
+var request = require('./request');
 
 var spotify     = {
     config: {
         clientId:       process.env.CLIENT_ID       || '',
         clientSecret:   process.env.CLIENT_SECRET   || '',
+        user:   {
+            id:             process.env.USER_ID         || '',
+            accessToken:    null,
+            refreshToken:   null
+        },
         api:    {
             host:       'api.spotify.com',
             limit:      30
@@ -32,8 +37,6 @@ var spotify     = {
     getApiTokens:           function(authorizationCode, callback) {
         //required imports
         var querystring     = require('querystring');
-        var request         = require('../helpers/request');
-        //Environment Variables Needed
         //Spotify Request Variabels
         var host        = spotify.config.auth.host;
         var path        = '/api/token';
@@ -52,6 +55,28 @@ var spotify     = {
         };
         //Execute Post to get tokens
         request.executePost(host, path, headers, postDataStr, function(responseStr) {
+            try {
+                //parse response string to json
+                var responseJSON                    = JSON.parse(responseStr);
+                //update configuration's access and refresh tokens for user
+                spotify.config.user.accessToken     = responseJSON.access_token;
+                spotify.config.user.refreshToken    = responseJSON.refresh_token;
+                callback(responseJSON);
+            } catch(err) {
+                callback(err);
+            }
+        });
+    },
+    getAllPlaylists:        function(callback) {
+        //Spotify Request Variabels
+        var host        = spotify.config.api.host;
+        var path        = '/v1/users/' + spotify.config.user.id + '/playlists?limit=' + spotify.config.api.limit;
+        //http headers set (including Authorization key/value)
+        var headers     = {
+            "Authorization":    "Bearer " + spotify.config.user.accessToken
+        };
+        //Execute Post to get tokens
+        request.executeGet(host, path, headers, function(responseStr) {
             try {
                 var responseJSON    = JSON.parse(responseStr);
                 callback(responseJSON);

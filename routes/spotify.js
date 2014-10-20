@@ -1,14 +1,14 @@
 var express = require('express');
 var router  = express.Router();
 
+var spotify = require('../helpers/spotify');
+
 /* GET users listing. */
 router.get('/', function(req, res) {
     res.send('Spotify! (' + process.env.SDTEST + ')');
 });
 /* Executes Authorization for Initial Setup */
 router.get('/authorize', function(req, res) {
-    //required imports
-    var spotify = require('../helpers/spotify');
     //generate authorization url
     var url     = spotify.generateAuthorizeUri();
     //Redirect for authorization
@@ -24,8 +24,6 @@ router.get('/callback', function(req, res) {
     if(error) {
         res.send('ERROR: ' + error);
     } else {
-        //required imports
-        var spotify         = require('../helpers/spotify');
         spotify.getApiTokens(code, function(result) {
             if(result instanceof Error) {
                 //currently only occuring if parsing error with response string to json
@@ -39,6 +37,19 @@ router.get('/callback', function(req, res) {
             }
         });
     }
+});
+
+router.get('/accesstoken', function(req, res) {
+    res.json({
+        accessToken:    spotify.config.user.accessToken,
+        refreshToken:   spotify.config.user.refreshToken
+    });
+});
+
+router.get('/playlists', function(req, res) {
+    spotify.getAllPlaylists(function(result) {
+        res.json(result);
+    });
 });
 
 
