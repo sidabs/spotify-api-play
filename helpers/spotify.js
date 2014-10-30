@@ -2,15 +2,16 @@ var request = require('./request');
 
 var spotify     = {
     config: {
-        clientId:       process.env.CLIENT_ID       || '',
-        clientSecret:   process.env.CLIENT_SECRET   || '',
+        clientId:       process.env.CLIENT_ID           || '',
+        clientSecret:   process.env.CLIENT_SECRET       || '',
         user:   {
-            id:             process.env.USER_ID     || '',
-            accessToken:    null,
-            refreshToken:   null
+            id:             process.env.USER_ID         || '',
+            accessToken:    process.env.ACCESS_TOKEN    || null,
+            refreshToken:   process.env.REFRESH_TOKEN   || null,
+            expires:        process.env.EXPIRES         || null
         },
         playlist:   {
-            id:         process.env.PLAYLIST_ID     || ''
+            id:         process.env.PLAYLIST_ID         || ''
         },
         api:    {
             host:       'api.spotify.com',
@@ -70,6 +71,40 @@ var spotify     = {
             }
         });
     },
+    refreshApiTokens:       function(callback) {
+        //required imports
+        var querystring     = require('querystring');
+        //Spotify Request Variabels
+        var host        = spotify.config.auth.host;
+        var path        = '/api/token';
+        var postData    = {
+            'grant_type':       'refresh_token',
+            'refresh_token':    spotify.config.user.refreshToken
+        };
+        //Request Specific Variables
+        var postDataStr = querystring.stringify(postData);
+        //http headers set (including Authorization key/value)
+        var headers     = {
+            "Content-Type":     "application/x-www-form-urlencoded",
+            "Content-Length":   postDataStr.length,
+            "Authorization":    "Basic " + new Buffer(spotify.config.clientId + ":" + spotify.config.clientSecret).toString('base64')      
+        };
+        //Execute Post to get tokens
+        request.executePost(host, path, headers, postDataStr, function(responseStr) {
+            try {
+                var responseJSON    = JSON.parse(responseStr);
+                //setup date logic for expiration of newly issued token
+                var newExpiration   = new Date();
+                newExpiration.setSeconds(newExpiration.getSeconds() + 3600);
+                //update configuration's access and refresh tokens for user
+                spotify.config.user.accessToken = responseJSON.access_token;
+                spotify.config.user.expires     = newExpiration.getTime();
+                callback(responseJSON);
+            } catch(err) {
+                callback(err);
+            }
+        });
+    },
     getAllPlaylists:        function(userId, callback) {
         //Spotify Request Variabels
         var host        = spotify.config.api.host;
@@ -88,7 +123,7 @@ var spotify     = {
             }
         });
     },
-    getPlaylist:        function(userId, playlistId, callback) {
+    getPlaylist:            function(userId, playlistId, callback) {
         //Spotify Request Variabels
         var host        = spotify.config.api.host;
         var path        = '/v1/users/' + userId + '/playlists/' + playlistId;
@@ -105,7 +140,7 @@ var spotify     = {
                 callback(err);
             }
         });
-    },
+    }
 };
 
 module.exports  = spotify;
